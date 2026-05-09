@@ -255,9 +255,8 @@ export default function App() {
     const progress = progressByCountry[selectedCountry];
     if (!progress) return 1;
 
-    const storedDay = safeDay(progress.aktueller_tag);
-    return progress.letztes_datum === todayDate ? storedDay : safeDay(storedDay + 1);
-  }, [selectedCountry, progressByCountry, todayDate]);
+    return safeDay(progress.aktueller_tag);
+  }, [selectedCountry, progressByCountry]);
   const [viewedDay, setViewedDay] = useState(1);
 
   const getCategoryForDay = (day) => categoryCycle[(day - 1) % categoryCycle.length];
@@ -329,39 +328,61 @@ export default function App() {
   }, [session]);
 
   useEffect(() => {
-    async function ensureCountryStartDate() {
+    async function syncCountryProgress() {
       const user = session?.user;
       if (!supabase) return;
       if (!user?.id) return;
       if (!selectedCountry) return;
-      if (progressByCountry[selectedCountry]) return;
 
-      const initial = todayDate;
-      const { data, error } = await supabase
-        .from(progressTable)
-        .insert({
-          user_id: user.id,
-          land: selectedCountry,
-          aktueller_tag: 1,
-          letztes_datum: initial
-        })
-        .select("id,land,aktueller_tag,letztes_datum")
-        .single();
+      const existing = progressByCountry[selectedCountry];
+      if (!existing) {
+        const { data, error } = await supabase
+          .from(progressTable)
+          .insert({
+            user_id: user.id,
+            land: selectedCountry,
+            aktueller_tag: 1,
+            letztes_datum: todayDate
+          })
+          .select("id,land,aktueller_tag,letztes_datum")
+          .single();
 
-      if (error) {
+        if (error) return;
+        setProgressByCountry((prev) => ({
+          ...prev,
+          [selectedCountry]: {
+            id: data.id,
+            aktueller_tag: safeDay(data.aktueller_tag ?? 1),
+            letztes_datum: data.letztes_datum ?? todayDate
+          }
+        }));
         return;
       }
-      setProgressByCountry((prev) => ({
-        ...prev,
-        [selectedCountry]: {
-          id: data.id,
-          aktueller_tag: data.aktueller_tag ?? 1,
-          letztes_datum: data.letztes_datum ?? initial
-        }
-      }));
+
+      if (existing.letztes_datum && existing.letztes_datum < todayDate) {
+        const nextDay = safeDay(existing.aktueller_tag) + 1;
+        const { error: updateError } = await supabase
+          .from(progressTable)
+          .update({
+            aktueller_tag: nextDay,
+            letztes_datum: todayDate
+          })
+          .eq("id", existing.id)
+          .eq("user_id", user.id);
+
+        if (updateError) return;
+        setProgressByCountry((prev) => ({
+          ...prev,
+          [selectedCountry]: {
+            ...existing,
+            aktueller_tag: nextDay,
+            letztes_datum: todayDate
+          }
+        }));
+      }
     }
 
-    ensureCountryStartDate();
+    syncCountryProgress();
   }, [selectedCountry, session, progressByCountry, todayDate]);
 
   useEffect(() => {
@@ -436,7 +457,6 @@ export default function App() {
   );
 
   const selectedLesson = useMemo(() => lessonForAppDay(viewedDay), [lessons, viewedDay]);
-  const hasNextLesson = useMemo(() => Boolean(lessonForAppDay(viewedDay + 1)), [lessons, viewedDay]);
 
   const heroImageSrc = useMemo(
     () => getCountryCategoryImage(selectedCountry, viewedCategory),
@@ -491,58 +511,6 @@ export default function App() {
     setSelectedCountry("");
     setProgressByCountry({});
     setLessons([]);
-  }
-
-  async function handleNextLesson() {
-    const nextDay = safeDay(viewedDay + 1);
-    const nextLesson = lessonForAppDay(nextDay);
-    if (!nextLesson) return;
-    setViewedDay(nextDay);
-
-    if (!supabase || !session?.user?.id || !selectedCountry) return;
-
-    const existingProgress = progressByCountry[selectedCountry];
-    if (existingProgress?.id) {
-      const { error: updateError } = await supabase
-        .from(progressTable)
-        .update({
-          aktueller_tag: safeDay(nextDay),
-          letztes_datum: todayDate
-        })
-        .eq("id", existingProgress.id)
-        .eq("user_id", session.user.id);
-      if (updateError) return;
-      setProgressByCountry((prev) => ({
-        ...prev,
-        [selectedCountry]: {
-          ...existingProgress,
-          aktueller_tag: safeDay(nextDay),
-          letztes_datum: todayDate
-        }
-      }));
-      return;
-    }
-
-    const { data, error: insertError } = await supabase
-      .from(progressTable)
-      .insert({
-        user_id: session.user.id,
-        land: selectedCountry,
-        aktueller_tag: safeDay(nextDay),
-        letztes_datum: todayDate
-      })
-      .select("id,land,aktueller_tag,letztes_datum")
-      .single();
-
-    if (insertError) return;
-    setProgressByCountry((prev) => ({
-      ...prev,
-      [selectedCountry]: {
-        id: data.id,
-        aktueller_tag: safeDay(data.aktueller_tag),
-        letztes_datum: data.letztes_datum
-      }
-    }));
   }
 
   async function handleSaveNote(sectionLabel, content) {
@@ -765,15 +733,6 @@ export default function App() {
                       className="rounded-full bg-[#4b7e76] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
                     >
                       ← Vorherige
-                    </button>
-                  )}
-                  {hasNextLesson && (
-                    <button
-                      type="button"
-                      onClick={handleNextLesson}
-                      className="rounded-full bg-[#835baf] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#835baf]"
-                    >
-                      Nächste →
                     </button>
                   )}
                 </div>
