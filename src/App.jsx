@@ -20,6 +20,11 @@ import {
 const countries = ["Italien", "Spanien", "Griechenland", "Portugal", "Dänemark"];
 const progressTable = "user_progress";
 const notesTable = "notizen";
+const subscriptionsTable = "subscriptions";
+
+const stripeMonthlyPrice = import.meta.env.VITE_STRIPE_MONTHLY_PRICE || "";
+const stripeYearlyPrice = import.meta.env.VITE_STRIPE_YEARLY_PRICE || "";
+const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || "";
 
 const countryImageSlug = {
   Italien: "italien",
@@ -117,6 +122,11 @@ function mapAuthErrorToGerman(message) {
     return "Bitte gib eine gueltige E-Mail-Adresse ein.";
   }
   return "Anmeldung oder Registrierung fehlgeschlagen. Bitte pruefe deine Eingaben.";
+}
+
+function hasSubscriptionAccess(subscription) {
+  if (!subscription) return false;
+  return subscription.status === "trialing" || subscription.status === "active";
 }
 
 function AuthScreen({ initialMode = "login", onBack }) {
@@ -237,6 +247,64 @@ function AuthScreen({ initialMode = "login", onBack }) {
   );
 }
 
+function UpgradeScreen({ session, subscription, onCheckout }) {
+  const searchParams = new URLSearchParams(window.location.search);
+  const checkoutSuccess = searchParams.get("success") === "true";
+  const checkoutCanceled = searchParams.get("canceled") === "true";
+
+  return (
+    <main className="min-h-screen px-6 py-12 md:px-10">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+        <div className="rounded-4xl bg-white p-8 shadow-soft md:p-10">
+          <h1 className="text-3xl font-bold text-andoya-ink md:text-4xl">Andoya Premium</h1>
+          <p className="mt-3 text-sm leading-relaxed text-andoya-slate md:text-base">
+            Deine 7-Tage-Testphase ist Teil des Checkouts. Wähle ein Abo und starte direkt mit
+            deiner kostenlosen Testphase.
+          </p>
+
+          {subscription && (
+            <p className="mt-4 text-sm text-[#4b7e76]">
+              Aktueller Status: {subscription.status}
+            </p>
+          )}
+
+          {checkoutSuccess && (
+            <p className="mt-4 rounded-xl bg-[#e8f4f4] px-4 py-2 text-sm text-[#4b7e76]">
+              Willkommen bei Andoya Premium!
+            </p>
+          )}
+
+          {checkoutCanceled && (
+            <p className="mt-4 rounded-xl bg-[#fef3e8] px-4 py-2 text-sm text-andoya-ink">
+              Zahlung abgebrochen
+            </p>
+          )}
+
+          <div className="mt-6 grid gap-3 md:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => onCheckout(stripeMonthlyPrice)}
+              className="rounded-2xl bg-[#835baf] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-95"
+            >
+              Monatlich €4,99
+            </button>
+            <button
+              type="button"
+              onClick={() => onCheckout(stripeYearlyPrice)}
+              className="rounded-2xl bg-andoya-ink px-5 py-3 text-sm font-semibold text-white transition hover:opacity-95"
+            >
+              Jährlich €39,99
+            </button>
+          </div>
+          <p className="mt-4 text-xs text-andoya-slate">
+            Eingeloggt als {session?.user?.email || "Unbekannt"}.
+          </p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export default function App() {
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
@@ -248,6 +316,9 @@ export default function App() {
   const [error, setError] = useState("");
   const [noteInfo, setNoteInfo] = useState("");
   const [progressByCountry, setProgressByCountry] = useState({});
+  const [subscription, setSubscription] = useState(null);
+  const [subscriptionReady, setSubscriptionReady] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
 
   const todayDate = useMemo(() => toDateOnlyValue(new Date()), []);
   const currentDay = useMemo(() => {
@@ -289,6 +360,35 @@ export default function App() {
       authListener.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    async function loadSubscription() {
+      if (!supabase || !session?.user?.id) {
+        setSubscription(null);
+        setSubscriptionReady(true);
+        return;
+      }
+
+      setSubscriptionReady(false);
+      const { data, error: subscriptionError } = await supabase
+        .from(subscriptionsTable)
+        .select("id,status,trial_end")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (subscriptionError) {
+        setSubscription(null);
+        setSubscriptionReady(true);
+        return;
+      }
+
+      setSubscription(Array.isArray(data) && data.length > 0 ? data[0] : null);
+      setSubscriptionReady(true);
+    }
+
+    loadSubscription();
+  }, [session]);
 
   useEffect(() => {
     async function loadProgress() {
@@ -489,6 +589,55 @@ export default function App() {
         onLogin={() => setAuthMode("login")}
         onRegister={() => setAuthMode("register")}
       />
+    );
+  }
+
+  if (!subscriptionReady) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <p className="text-sm text-andoya-slate">Prüfe Abo-Status...</p>
+      </main>
+    );
+  }
+
+  async function handleCheckout(priceId) {
+    if (!stripePublicKey) {
+      setCheckoutError("Stripe Public Key fehlt.");
+      return;
+    }
+    if (!priceId) {
+      setCheckoutError("Preis ist nicht konfiguriert.");
+      return;
+    }
+    setCheckoutError("");
+
+    const response = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: session.user.id,
+        email: session.user.email,
+        priceId
+      })
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result?.url) {
+      setCheckoutError(result?.error || "Checkout konnte nicht gestartet werden.");
+      return;
+    }
+
+    window.location.href = result.url;
+  }
+
+  if (!hasSubscriptionAccess(subscription)) {
+    return (
+      <>
+        <UpgradeScreen session={session} subscription={subscription} onCheckout={handleCheckout} />
+        {checkoutError && (
+          <p className="pb-8 text-center text-sm text-red-600">{checkoutError}</p>
+        )}
+      </>
     );
   }
 
