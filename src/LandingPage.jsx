@@ -22,6 +22,9 @@ export default function LandingPage({ onLogin, onRegister }) {
               Jeden Tag eine neue Lektion zu deinem nächsten Reiseziel. Sprache,
               Kultur, Essen, Geheimtipps - in 3 Minuten.
             </p>
+            <p className="mt-4 max-w-3xl text-sm leading-relaxed text-andoya-slate/85">
+              Für neugierige Reisende, die ihr Urlaubsland wirklich kennenlernen wollen.
+            </p>
             <button
               type="button"
               onClick={onRegister}
@@ -66,6 +69,45 @@ export default function LandingPage({ onLogin, onRegister }) {
                 Sammle Highlights und nimm deine Notizen direkt auf die nächste Reise mit.
               </p>
             </article>
+          </div>
+        </section>
+
+        <section className="rounded-4xl bg-white p-8 shadow-soft md:p-10">
+          <h2 className="text-center text-2xl font-bold text-andoya-ink md:text-3xl">
+            Aktuell verfügbar
+          </h2>
+          <div className="mt-5 rounded-3xl bg-andoya-mint/70 px-4 py-6 md:px-8">
+            <p className="text-center text-sm leading-relaxed text-andoya-ink md:text-base">
+              <span className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+                <span>
+                  <span aria-hidden>🇮🇹</span> Italien
+                </span>
+                <span className="text-andoya-slate/45" aria-hidden>
+                  ·
+                </span>
+                <span>
+                  <span aria-hidden>🇬🇷</span> Griechenland
+                </span>
+                <span className="text-andoya-slate/45" aria-hidden>
+                  ·
+                </span>
+                <span>
+                  <span aria-hidden>🇪🇸</span> Spanien
+                </span>
+                <span className="text-andoya-slate/45" aria-hidden>
+                  ·
+                </span>
+                <span>
+                  <span aria-hidden>🇵🇹</span> Portugal
+                </span>
+                <span className="text-andoya-slate/45" aria-hidden>
+                  ·
+                </span>
+                <span>
+                  <span aria-hidden>🇩🇰</span> Dänemark
+                </span>
+              </span>
+            </p>
           </div>
         </section>
 
