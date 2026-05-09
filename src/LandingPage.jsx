@@ -70,7 +70,9 @@ export default function LandingPage({ onLogin, onRegister }) {
         </section>
 
         <section className="rounded-4xl bg-white p-8 shadow-soft md:p-10">
-          <h2 className="text-2xl font-bold text-andoya-ink md:text-3xl">Andoya immer dabei 📱</h2>
+          <h2 className="text-2xl font-bold text-andoya-ink md:text-3xl">
+            Andoya immer dabei 📱
+          </h2>
           <p className="mt-3 max-w-3xl text-base leading-relaxed text-andoya-slate">
             Speichere die Andoya App direkt auf deinem Homescreen, kostenlos und ohne App Store.
           </p>
