@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import LandingPage from "./LandingPage";
+import MeineNotizen from "./MeineNotizen";
 import {
+  BookmarkPlus,
   BookOpen,
   Compass,
   Landmark,
@@ -16,6 +19,7 @@ import {
 
 const countries = ["Italien", "Spanien", "Griechenland", "Portugal", "Dänemark"];
 const progressTable = "user_progress";
+const notesTable = "notizen";
 
 const countryImageSlug = {
   Italien: "italien",
@@ -89,6 +93,12 @@ function toDateOnlyValue(date) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }
 
+function safeDay(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.max(1, Math.floor(parsed));
+}
+
 function mapAuthErrorToGerman(message) {
   const text = String(message || "").toLowerCase();
   if (text.includes("invalid login credentials")) {
@@ -109,8 +119,8 @@ function mapAuthErrorToGerman(message) {
   return "Anmeldung oder Registrierung fehlgeschlagen. Bitte pruefe deine Eingaben.";
 }
 
-function AuthScreen() {
-  const [mode, setMode] = useState("login");
+function AuthScreen({ initialMode = "login", onBack }) {
+  const [mode, setMode] = useState(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
@@ -151,6 +161,17 @@ function AuthScreen() {
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-12">
       <section className="w-full max-w-md rounded-4xl bg-white p-8 shadow-soft">
+        {onBack && (
+          <div className="mb-3">
+            <button
+              type="button"
+              onClick={onBack}
+              className="rounded-full bg-andoya-cream px-3 py-1 text-xs font-medium text-[#835baf]"
+            >
+              Zurück
+            </button>
+          </div>
+        )}
         <div className="flex flex-col items-center">
           <img src="/Logo_Andoya1.png" alt="Andoya Logo" className="h-20 w-auto" />
           <h1 className="mt-4 text-2xl font-semibold text-andoya-ink">Willkommen bei Andoya</h1>
@@ -219,30 +240,24 @@ function AuthScreen() {
 export default function App() {
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [authMode, setAuthMode] = useState(null);
+  const [activePage, setActivePage] = useState("main");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [lessons, setLessons] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [noteInfo, setNoteInfo] = useState("");
   const [progressByCountry, setProgressByCountry] = useState({});
 
-  const today = useMemo(() => new Date(), []);
-  const countryStartDate = useMemo(
-    () => (selectedCountry ? progressByCountry[selectedCountry] || null : null),
-    [selectedCountry, progressByCountry]
-  );
-
+  const todayDate = useMemo(() => toDateOnlyValue(new Date()), []);
   const currentDay = useMemo(() => {
-    if (!countryStartDate) return 1;
-    const start = new Date(countryStartDate);
-    if (Number.isNaN(start.getTime())) return 1;
+    if (!selectedCountry) return 1;
+    const progress = progressByCountry[selectedCountry];
+    if (!progress) return 1;
 
-    const todayAtMidnight = new Date(today);
-    todayAtMidnight.setHours(0, 0, 0, 0);
-    start.setHours(0, 0, 0, 0);
-    const diffInMs = todayAtMidnight.getTime() - start.getTime();
-    const rawDay = Math.floor(diffInMs / 86400000) + 1;
-    return rawDay > 0 ? rawDay : 1;
-  }, [countryStartDate, today]);
+    const storedDay = safeDay(progress.aktueller_tag);
+    return progress.letztes_datum === todayDate ? storedDay : safeDay(storedDay + 1);
+  }, [selectedCountry, progressByCountry, todayDate]);
   const [viewedDay, setViewedDay] = useState(1);
 
   const getCategoryForDay = (day) => categoryCycle[(day - 1) % categoryCycle.length];
@@ -285,7 +300,7 @@ export default function App() {
 
       const { data, error: progressError } = await supabase
         .from(progressTable)
-        .select("country,started_at")
+        .select("id,land,aktueller_tag,letztes_datum")
         .eq("user_id", session.user.id);
 
       if (progressError) {
@@ -294,8 +309,12 @@ export default function App() {
 
       const nextProgress = {};
       for (const row of data ?? []) {
-        if (row.country && row.started_at) {
-          nextProgress[row.country] = row.started_at;
+        if (row.land) {
+          nextProgress[row.land] = {
+            id: row.id,
+            aktueller_tag: safeDay(row.aktueller_tag ?? 1),
+            letztes_datum: row.letztes_datum ?? null
+          };
         }
       }
 
@@ -317,25 +336,33 @@ export default function App() {
       if (!selectedCountry) return;
       if (progressByCountry[selectedCountry]) return;
 
-      const initial = toDateOnlyValue(new Date());
-
-      const { data, error } = await supabase.from("user_progress").upsert(
-        {
+      const initial = todayDate;
+      const { data, error } = await supabase
+        .from(progressTable)
+        .insert({
           user_id: user.id,
-          country: selectedCountry,
-          started_at: initial
-        },
-        { onConflict: "user_id,country" }
-      );
+          land: selectedCountry,
+          aktueller_tag: 1,
+          letztes_datum: initial
+        })
+        .select("id,land,aktueller_tag,letztes_datum")
+        .single();
 
       if (error) {
         return;
       }
-      setProgressByCountry((prev) => ({ ...prev, [selectedCountry]: initial }));
+      setProgressByCountry((prev) => ({
+        ...prev,
+        [selectedCountry]: {
+          id: data.id,
+          aktueller_tag: data.aktueller_tag ?? 1,
+          letztes_datum: data.letztes_datum ?? initial
+        }
+      }));
     }
 
     ensureCountryStartDate();
-  }, [selectedCountry, session, progressByCountry]);
+  }, [selectedCountry, session, progressByCountry, todayDate]);
 
   useEffect(() => {
     setViewedDay(currentDay);
@@ -429,21 +456,127 @@ export default function App() {
   }
 
   if (!session) {
-    return <AuthScreen />;
+    if (authMode === "login" || authMode === "register") {
+      return (
+        <AuthScreen
+          initialMode={authMode}
+          onBack={() => setAuthMode(null)}
+        />
+      );
+    }
+    return (
+      <LandingPage
+        onLogin={() => setAuthMode("login")}
+        onRegister={() => setAuthMode("register")}
+      />
+    );
+  }
+
+  if (activePage === "notes") {
+    return (
+      <MeineNotizen
+        supabase={supabase}
+        session={session}
+        countries={countries}
+        onBack={() => setActivePage("main")}
+      />
+    );
   }
 
   async function handleLogout() {
     if (!supabase) return;
     await supabase.auth.signOut();
+    setAuthMode(null);
+    setActivePage("main");
     setSelectedCountry("");
     setProgressByCountry({});
     setLessons([]);
+  }
+
+  async function handleNextLesson() {
+    const nextDay = safeDay(viewedDay + 1);
+    const nextLesson = lessonForAppDay(nextDay);
+    if (!nextLesson) return;
+    setViewedDay(nextDay);
+
+    if (!supabase || !session?.user?.id || !selectedCountry) return;
+
+    const existingProgress = progressByCountry[selectedCountry];
+    if (existingProgress?.id) {
+      const { error: updateError } = await supabase
+        .from(progressTable)
+        .update({
+          aktueller_tag: safeDay(nextDay),
+          letztes_datum: todayDate
+        })
+        .eq("id", existingProgress.id)
+        .eq("user_id", session.user.id);
+      if (updateError) return;
+      setProgressByCountry((prev) => ({
+        ...prev,
+        [selectedCountry]: {
+          ...existingProgress,
+          aktueller_tag: safeDay(nextDay),
+          letztes_datum: todayDate
+        }
+      }));
+      return;
+    }
+
+    const { data, error: insertError } = await supabase
+      .from(progressTable)
+      .insert({
+        user_id: session.user.id,
+        land: selectedCountry,
+        aktueller_tag: safeDay(nextDay),
+        letztes_datum: todayDate
+      })
+      .select("id,land,aktueller_tag,letztes_datum")
+      .single();
+
+    if (insertError) return;
+    setProgressByCountry((prev) => ({
+      ...prev,
+      [selectedCountry]: {
+        id: data.id,
+        aktueller_tag: safeDay(data.aktueller_tag),
+        letztes_datum: data.letztes_datum
+      }
+    }));
+  }
+
+  async function handleSaveNote(sectionLabel, content) {
+    if (!supabase || !session?.user?.id || !selectedCountry || !content) return;
+
+    const { error: noteError } = await supabase.from(notesTable).insert({
+      user_id: session.user.id,
+      land: selectedCountry,
+      typ: "gespeichert",
+      inhalt: content,
+      quelle: `Tag ${viewedDay} · ${sectionLabel}`,
+      erstellt_am: new Date().toISOString()
+    });
+
+    if (noteError) {
+      setNoteInfo("Notiz konnte nicht gespeichert werden.");
+      return;
+    }
+
+    setNoteInfo(`"${sectionLabel}" als Notiz gespeichert.`);
+    window.setTimeout(() => setNoteInfo(""), 2500);
   }
 
   return (
     <main className="min-h-screen px-6 py-12 md:px-10">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setActivePage("notes")}
+            className="mr-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-[#835baf] shadow-soft"
+          >
+            Meine Notizen
+          </button>
           <button
             type="button"
             onClick={handleLogout}
@@ -532,11 +665,21 @@ export default function App() {
                 </div>
 
                 <div className="rounded-3xl bg-[#f0ebf8] p-4">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles size={15} className="text-[#835baf]" />
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#835baf]">
-                      Einstieg
-                    </p>
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles size={15} className="text-[#835baf]" />
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#835baf]">
+                        Einstieg
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveNote("Einstieg", selectedLesson.hook)}
+                      className="rounded-md p-1 text-[#835baf] transition hover:bg-white/60"
+                      aria-label="Einstieg speichern"
+                    >
+                      <BookmarkPlus size={15} />
+                    </button>
                   </div>
                   <p className="mt-1 text-sm leading-relaxed text-andoya-slate">
                     {selectedLesson.hook}
@@ -544,11 +687,21 @@ export default function App() {
                 </div>
 
                 <div>
-                  <div className="flex items-center gap-1.5">
-                    <BookOpen size={15} className="text-[#835baf]" />
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#835baf]">
-                      Inhalt
-                    </p>
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <BookOpen size={15} className="text-[#835baf]" />
+                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#835baf]">
+                        Inhalt
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveNote("Inhalt", selectedLesson.main)}
+                      className="rounded-md p-1 text-[#835baf] transition hover:bg-[#f0ebf8]"
+                      aria-label="Inhalt speichern"
+                    >
+                      <BookmarkPlus size={15} />
+                    </button>
                   </div>
                   <p className="mt-1 text-sm leading-relaxed text-andoya-slate">
                     {selectedLesson.main}
@@ -557,28 +710,52 @@ export default function App() {
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="rounded-3xl bg-[#e8f4f4] p-4">
-                    <div className="flex items-center gap-1.5">
-                      <Lightbulb size={15} className="text-[#835baf]" />
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#835baf]">
-                        Fakt
-                      </p>
+                    <div className="flex items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Lightbulb size={15} className="text-[#835baf]" />
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#835baf]">
+                          Fakt
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveNote("Fakt", selectedLesson.keyfact)}
+                        className="rounded-md p-1 text-[#835baf] transition hover:bg-white/60"
+                        aria-label="Fakt speichern"
+                      >
+                        <BookmarkPlus size={15} />
+                      </button>
                     </div>
                     <p className="mt-1 text-sm leading-relaxed text-andoya-slate">
                       {selectedLesson.keyfact}
                     </p>
                   </div>
                   <div className="rounded-3xl bg-[#c6d5e6] p-4">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin size={15} className="text-[#835baf]" />
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#835baf]">
-                        Tipp
-                      </p>
+                    <div className="flex items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin size={15} className="text-[#835baf]" />
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#835baf]">
+                          Tipp
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveNote("Tipp", selectedLesson.tip)}
+                        className="rounded-md p-1 text-[#835baf] transition hover:bg-white/50"
+                        aria-label="Tipp speichern"
+                      >
+                        <BookmarkPlus size={15} />
+                      </button>
                     </div>
                     <p className="mt-1 text-sm leading-relaxed text-andoya-slate">
                       {selectedLesson.tip}
                     </p>
                   </div>
                 </div>
+
+                {noteInfo && (
+                  <p className="text-sm font-medium text-[#4b7e76]">{noteInfo}</p>
+                )}
 
                 <div className="flex items-center justify-center gap-3 pt-2">
                   {viewedDay > 1 && (
@@ -593,7 +770,7 @@ export default function App() {
                   {hasNextLesson && (
                     <button
                       type="button"
-                      onClick={() => setViewedDay((day) => day + 1)}
+                      onClick={handleNextLesson}
                       className="rounded-full bg-[#835baf] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#835baf]"
                     >
                       Nächste →
