@@ -32,7 +32,7 @@ export default function LandingPage({ onLogin, onRegister }) {
           </div>
           <div className="overflow-hidden rounded-3xl shadow-soft">
             <img
-              src="/images/image_startseite.png"
+              src="/images/image_startseite.jpg"
               alt="Inspiration fuer deine naechste Reise"
               className="h-full w-full object-cover"
             />
