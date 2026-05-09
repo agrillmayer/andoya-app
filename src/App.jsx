@@ -721,6 +721,10 @@ export default function App() {
                   </div>
                 </div>
 
+                <p className="pt-2 text-center text-sm text-andoya-slate">
+                  🌍 Deine nächste Lektion wartet morgen auf dich.
+                </p>
+
                 {noteInfo && (
                   <p className="text-sm font-medium text-[#4b7e76]">{noteInfo}</p>
                 )}
