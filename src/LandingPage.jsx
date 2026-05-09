@@ -13,21 +13,30 @@ export default function LandingPage({ onLogin, onRegister }) {
           </button>
         </header>
 
-        <section className="rounded-4xl bg-white p-8 shadow-soft md:p-12">
-          <h1 className="text-4xl font-bold leading-tight text-andoya-ink md:text-5xl">
-            Deine Reise beginnt heute.
-          </h1>
-          <p className="mt-4 max-w-3xl text-base leading-relaxed text-andoya-slate md:text-lg">
-            Jeden Tag eine neue Lektion zu deinem nächsten Reiseziel. Sprache,
-            Kultur, Essen, Geheimtipps - in 3 Minuten.
-          </p>
-          <button
-            type="button"
-            onClick={onRegister}
-            className="mt-6 rounded-full bg-[#835baf] px-6 py-3 text-sm font-semibold text-white transition hover:opacity-95"
-          >
-            7 Tage gratis testen
-          </button>
+        <section className="grid items-center gap-8 rounded-4xl bg-white p-8 shadow-soft md:grid-cols-2 md:p-12">
+          <div>
+            <h1 className="text-4xl font-bold leading-tight text-andoya-ink md:text-5xl">
+              Deine Reise beginnt heute.
+            </h1>
+            <p className="mt-4 max-w-3xl text-base leading-relaxed text-andoya-slate md:text-lg">
+              Jeden Tag eine neue Lektion zu deinem nächsten Reiseziel. Sprache,
+              Kultur, Essen, Geheimtipps - in 3 Minuten.
+            </p>
+            <button
+              type="button"
+              onClick={onRegister}
+              className="mt-6 rounded-full bg-[#835baf] px-6 py-3 text-sm font-semibold text-white transition hover:opacity-95"
+            >
+              7 Tage gratis testen
+            </button>
+          </div>
+          <div className="overflow-hidden rounded-3xl shadow-soft">
+            <img
+              src="/images/image_startseite.png"
+              alt="Inspiration fuer deine naechste Reise"
+              className="h-full w-full object-cover"
+            />
+          </div>
         </section>
 
         <section className="rounded-4xl bg-white p-8 shadow-soft md:p-10">
@@ -76,6 +85,27 @@ export default function LandingPage({ onLogin, onRegister }) {
                 </p>
                 <p className="mt-1 text-sm text-andoya-slate">
                   In Italien beginnt der Abend oft später - und viel entspannter.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#835baf]">
+                  Inhalt
+                </p>
+                <p className="mt-1 text-sm text-andoya-slate">
+                  Italiens Kultur lebt von Begegnungen, kleinen Ritualen und
+                  einem starken Gemeinschaftsgefühl. In vielen Städten beginnt
+                  der Tag mit einem schnellen Espresso an der Bar, wo man
+                  miteinander spricht statt nur vorbeizulaufen. Mittags treffen
+                  sich Familien oft zum Essen, und am Abend füllen sich Plätze
+                  mit Menschen, die den Alltag draußen genießen. Kunst und
+                  Geschichte sind überall sichtbar - von Kirchen und
+                  Kopfsteinpflaster bis zu modernen Vierteln mit kreativen
+                  Cafes. Gleichzeitig prägen regionale Unterschiede das Leben:
+                  Im Norden wirkt vieles strukturierter, im Süden spontaner und
+                  lauter. Wer Italien wirklich erleben will, sollte sich Zeit
+                  für Gespräche nehmen, lokale Märkte besuchen und auf die
+                  kleinen Gesten achten. Genau dort zeigt sich das echte Dolce
+                  Vita.
                 </p>
               </div>
               <div className="rounded-2xl bg-[#e8f4f4] p-4">
