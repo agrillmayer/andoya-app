@@ -258,8 +258,8 @@ function UpgradeScreen({ session, subscription, onCheckout }) {
         <div className="rounded-4xl bg-white p-8 shadow-soft md:p-10">
           <h1 className="text-3xl font-bold text-andoya-ink md:text-4xl">Andoya Premium</h1>
           <p className="mt-3 text-sm leading-relaxed text-andoya-slate md:text-base">
-            Deine 7-Tage-Testphase ist Teil des Checkouts. Wähle ein Abo und starte direkt mit
-            deiner kostenlosen Testphase.
+            Starte jetzt 7 Tage kostenlos - kein Risiko, jederzeit kündbar. Entdecke jeden Tag
+            interessante Fakten zu deinem nächsten Reiseziel.
           </p>
 
           {subscription && (
