@@ -76,10 +76,6 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const supabase =
   supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
-console.log("SUPABASE URL:", import.meta.env.VITE_SUPABASE_URL);
-console.log("SUPABASE KEY:", import.meta.env.VITE_SUPABASE_ANON_KEY?.slice(0, 10));
-console.log("SUPABASE CLIENT:", supabase);
-
 function normalizeLabel(value) {
   return String(value ?? "")
     .trim()
