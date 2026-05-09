@@ -70,6 +70,35 @@ export default function LandingPage({ onLogin, onRegister }) {
         </section>
 
         <section className="rounded-4xl bg-white p-8 shadow-soft md:p-10">
+          <h2 className="text-2xl font-bold text-andoya-ink md:text-3xl">Andoya immer dabei 📱</h2>
+          <p className="mt-3 max-w-3xl text-base leading-relaxed text-andoya-slate">
+            Speichere die Andoya App direkt auf deinem Homescreen, kostenlos und ohne App Store.
+          </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <article className="rounded-3xl bg-[#f0ebf8] p-5">
+              <p className="text-2xl" aria-hidden>
+                🤖
+              </p>
+              <p className="mt-2 text-sm font-semibold text-andoya-ink">Android</p>
+              <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-andoya-slate">
+                {`Chrome öffnen → drei Punkte oben rechts →
+App installieren`}
+              </p>
+            </article>
+            <article className="rounded-3xl bg-[#e8f4f4] p-5">
+              <p className="text-2xl" aria-hidden>
+                🍎
+              </p>
+              <p className="mt-2 text-sm font-semibold text-andoya-ink">iPhone</p>
+              <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-andoya-slate">
+                {`Safari öffnen → Teilen-Symbol unten →
+Zum Home-Bildschirm`}
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section className="rounded-4xl bg-white p-8 shadow-soft md:p-10">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#835baf]">
             Beispiel-Lektion
           </p>
