@@ -1,0 +1,12 @@
+[2026-05-06T12:48:20.064Z] [1/6] Starte Import: 2026-05-06T12:48:20.063Z
+[2026-05-06T12:48:20.070Z] [2/6] JSON-Datei: C:\Users\Andrea\Andoya\2026\Andoya_App\lektionen-backup-2026-05-06.json
+[2026-05-06T12:48:20.072Z] [2/6] Zieltabelle: lessons
+[2026-05-06T12:48:20.073Z] [3/6] ENV geladen: VITE_SUPABASE_URL gesetzt, SERVICE_KEY-Laenge=41
+[2026-05-06T12:48:20.085Z] [4/6] JSON gelesen: 911 Lektionen gefunden
+[2026-05-06T12:48:20.126Z] [5/6] Teste Supabase-Verbindung (SELECT auf Zieltabelle) ...
+[2026-05-06T12:48:21.953Z] [5/6] Supabase-Verbindung OK
+[2026-05-06T12:48:21.956Z] [6/6] Starte Insert von 911 Lektionen ...
+[2026-05-06T12:48:23.309Z] Import erfolgreich: 911 Lektionen in Tabelle "lessons" eingefuegt (status=201).
+[2026-05-06T12:48:23.311Z] Insert Rueckgabe-Zeilen: 911
+[2026-05-06T12:48:23.312Z] Beispiel-ID erste Zeile: 3
+[2026-05-06T12:48:23.313Z] Fertig: 2026-05-06T12:48:23.313Z (Dauer: 3s)
