@@ -409,7 +409,7 @@ export default function App() {
 
       const { data, error: progressError } = await supabase
         .from(progressTable)
-        .select("id,land,aktueller_tag,letztes_datum,gewaehltes_land")
+        .select("id,country,aktueller_tag,letztes_datum,gewaehltes_land")
         .eq("user_id", session.user.id);
 
       if (progressError) {
@@ -421,8 +421,8 @@ export default function App() {
 
       const nextProgress = {};
       for (const row of data ?? []) {
-        if (row.land) {
-          nextProgress[row.land] = {
+        if (row.country) {
+          nextProgress[row.country] = {
             id: row.id,
             aktueller_tag: safeDay(row.aktueller_tag ?? 1),
             letztes_datum: row.letztes_datum ?? null
@@ -457,12 +457,12 @@ export default function App() {
           .from(progressTable)
           .insert({
             user_id: user.id,
-            land: selectedCountry,
+            country: selectedCountry,
             aktueller_tag: 1,
             letztes_datum: todayDate,
             gewaehltes_land: selectedCountry
           })
-          .select("id,land,aktueller_tag,letztes_datum,gewaehltes_land")
+          .select("id,country,aktueller_tag,letztes_datum,gewaehltes_land")
           .single();
 
         if (error) return;
