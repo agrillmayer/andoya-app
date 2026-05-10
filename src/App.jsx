@@ -17,6 +17,7 @@ import {
   UtensilsCrossed
 } from "lucide-react";
 
+
 const countries = ["Italien", "Spanien", "Griechenland", "Portugal", "Dänemark"];
 const progressTable = "user_progress";
 const notesTable = "notizen";
