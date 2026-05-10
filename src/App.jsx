@@ -399,7 +399,7 @@ export default function App() {
 
       const { data, error: progressError } = await supabase
         .from(progressTable)
-        .select("id,land,aktueller_tag,letztes_datum")
+        .select("id,land,aktueller_tag,letztes_datum,gewaehltes_land")
         .eq("user_id", session.user.id);
 
       if (progressError) {
@@ -418,10 +418,14 @@ export default function App() {
       }
 
       setProgressByCountry(nextProgress);
-      if (!selectedCountry) {
-        const firstCountry = Object.keys(nextProgress)[0] || "";
-        setSelectedCountry(firstCountry);
-      }
+
+      const preferredRaw = (data ?? []).find((row) => row.gewaehltes_land)?.gewaehltes_land;
+      const preferred =
+        typeof preferredRaw === "string" && countries.includes(preferredRaw.trim())
+          ? preferredRaw.trim()
+          : "";
+      const fallbackCountry = Object.keys(nextProgress)[0] || "";
+      setSelectedCountry(preferred || fallbackCountry);
     }
 
     loadProgress();
@@ -442,12 +446,17 @@ export default function App() {
             user_id: user.id,
             land: selectedCountry,
             aktueller_tag: 1,
-            letztes_datum: todayDate
+            letztes_datum: todayDate,
+            gewaehltes_land: selectedCountry
           })
-          .select("id,land,aktueller_tag,letztes_datum")
+          .select("id,land,aktueller_tag,letztes_datum,gewaehltes_land")
           .single();
 
         if (error) return;
+        await supabase
+          .from(progressTable)
+          .update({ gewaehltes_land: selectedCountry })
+          .eq("user_id", user.id);
         setProgressByCountry((prev) => ({
           ...prev,
           [selectedCountry]: {
@@ -471,6 +480,10 @@ export default function App() {
           .eq("user_id", user.id);
 
         if (updateError) return;
+        await supabase
+          .from(progressTable)
+          .update({ gewaehltes_land: selectedCountry })
+          .eq("user_id", user.id);
         setProgressByCountry((prev) => ({
           ...prev,
           [selectedCountry]: {
@@ -662,6 +675,18 @@ export default function App() {
     setLessons([]);
   }
 
+  async function persistGewaehltesLand(land) {
+    if (!supabase || !session?.user?.id || !land) return;
+    await supabase.from(progressTable).update({ gewaehltes_land: land }).eq("user_id", session.user.id);
+  }
+
+  async function handleCountryChange(event) {
+    const next = event.target.value;
+    setSelectedCountry(next);
+    if (!next) return;
+    await persistGewaehltesLand(next);
+  }
+
   async function handleSaveNote(sectionLabel, content) {
     if (!supabase || !session?.user?.id || !selectedCountry || !content) return;
 
@@ -715,7 +740,9 @@ export default function App() {
             <select
               id="country"
               value={selectedCountry}
-              onChange={(event) => setSelectedCountry(event.target.value)}
+              onChange={(event) => {
+                void handleCountryChange(event);
+              }}
               className="w-full rounded-2xl border border-andoya-violet bg-white px-4 py-2.5 text-sm font-medium text-andoya-ink outline-none ring-andoya-violet transition focus:ring-2"
             >
               <option value="">Wähle dein Reiseziel ✈</option>

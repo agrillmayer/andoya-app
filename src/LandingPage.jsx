@@ -2,12 +2,17 @@ export default function LandingPage({ onLogin, onRegister }) {
   return (
     <main className="min-h-screen px-6 py-10 md:px-10">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-12">
-        <header className="flex items-center justify-between">
-          <img src="/Logo_Andoya1.png" alt="Andoya Logo" className="h-14 w-auto" />
+        <header className="flex items-center justify-between gap-4">
+          <img
+            src="/Logo_Andoya1.png"
+            alt="Andoya Logo"
+            className="block w-auto shrink-0 object-contain"
+            style={{ height: "7rem", width: "auto" }}
+          />
           <button
             type="button"
             onClick={onLogin}
-            className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#835baf] shadow-soft"
+            className="shrink-0 rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#835baf] shadow-soft"
           >
             Login
           </button>
