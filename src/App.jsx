@@ -562,8 +562,8 @@ export default function App() {
 
   const pastLessons = useMemo(
     () => {
-      if (viewedDay <= 1) return [];
-      return Array.from({ length: viewedDay - 1 }, (_, index) => index + 1)
+      if (currentDay < 1) return [];
+      return Array.from({ length: currentDay }, (_, index) => index + 1)
         .map((day) => {
           const lesson = lessonForAppDay(day);
           if (!lesson) return null;
@@ -576,7 +576,7 @@ export default function App() {
         .filter(Boolean)
         .reverse();
     },
-    [lessons, viewedDay]
+    [lessons, currentDay]
   );
 
   const selectedLesson = useMemo(() => lessonForAppDay(viewedDay), [lessons, viewedDay]);
