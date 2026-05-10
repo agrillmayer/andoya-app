@@ -247,7 +247,7 @@ function AuthScreen({ initialMode = "login", onBack }) {
   );
 }
 
-function UpgradeScreen({ session, subscription, onCheckout }) {
+function UpgradeScreen({ session, subscription, onCheckout, onLogout }) {
   const searchParams = new URLSearchParams(window.location.search);
   const checkoutSuccess = searchParams.get("success") === "true";
   const checkoutCanceled = searchParams.get("canceled") === "true";
@@ -255,6 +255,15 @@ function UpgradeScreen({ session, subscription, onCheckout }) {
   return (
     <main className="min-h-screen px-6 py-12 md:px-10">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onLogout}
+            className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#835baf] shadow-soft"
+          >
+            Logout
+          </button>
+        </div>
         <div className="rounded-4xl bg-white p-8 shadow-soft md:p-10">
           <h1 className="text-3xl font-bold text-andoya-ink md:text-4xl">Andoya Premium</h1>
           <p className="mt-3 text-sm leading-relaxed text-andoya-slate md:text-base">
@@ -643,10 +652,25 @@ export default function App() {
     window.location.href = result.url;
   }
 
+  async function handleLogout() {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setAuthMode(null);
+    setActivePage("main");
+    setSelectedCountry("");
+    setProgressByCountry({});
+    setLessons([]);
+  }
+
   if (!hasSubscriptionAccess(subscription)) {
     return (
       <>
-        <UpgradeScreen session={session} subscription={subscription} onCheckout={handleCheckout} />
+        <UpgradeScreen
+          session={session}
+          subscription={subscription}
+          onCheckout={handleCheckout}
+          onLogout={handleLogout}
+        />
         {checkoutError && (
           <p className="pb-8 text-center text-sm text-red-600">{checkoutError}</p>
         )}
@@ -663,16 +687,6 @@ export default function App() {
         onBack={() => setActivePage("main")}
       />
     );
-  }
-
-  async function handleLogout() {
-    if (!supabase) return;
-    await supabase.auth.signOut();
-    setAuthMode(null);
-    setActivePage("main");
-    setSelectedCountry("");
-    setProgressByCountry({});
-    setLessons([]);
   }
 
   async function persistGewaehltesLand(land) {
