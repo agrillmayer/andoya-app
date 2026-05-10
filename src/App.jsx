@@ -413,11 +413,8 @@ export default function App() {
         .eq("user_id", session.user.id);
 
       if (progressError) {
-        console.log("Land laden fehlgeschlagen:", progressError);
         return;
       }
-
-      console.log("Land geladen:", data);
 
       const nextProgress = {};
       for (const row of data ?? []) {
@@ -466,13 +463,10 @@ export default function App() {
           .single();
 
         if (error) return;
-        const { error: gewError } = await supabase
+        await supabase
           .from(progressTable)
           .update({ gewaehltes_land: selectedCountry })
           .eq("user_id", user.id);
-        if (!gewError) {
-          console.log("Land gespeichert:", selectedCountry);
-        }
         setProgressByCountry((prev) => ({
           ...prev,
           [selectedCountry]: {
@@ -496,13 +490,10 @@ export default function App() {
           .eq("user_id", user.id);
 
         if (updateError) return;
-        const { error: gewError2 } = await supabase
+        await supabase
           .from(progressTable)
           .update({ gewaehltes_land: selectedCountry })
           .eq("user_id", user.id);
-        if (!gewError2) {
-          console.log("Land gespeichert:", selectedCountry);
-        }
         setProgressByCountry((prev) => ({
           ...prev,
           [selectedCountry]: {
@@ -701,15 +692,10 @@ export default function App() {
 
   async function persistGewaehltesLand(land) {
     if (!supabase || !session?.user?.id || !land) return;
-    const { error } = await supabase
+    await supabase
       .from(progressTable)
       .update({ gewaehltes_land: land })
       .eq("user_id", session.user.id);
-    if (error) {
-      console.log("Land gespeichern fehlgeschlagen:", error);
-      return;
-    }
-    console.log("Land gespeichert:", land);
   }
 
   async function handleCountryChange(event) {
