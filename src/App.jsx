@@ -336,7 +336,7 @@ export default function App() {
     const progress = progressByCountry[selectedCountry];
     if (!progress) return 1;
 
-    return safeDay(progress.aktueller_tag);
+    return safeDay(progress.last_day);
   }, [selectedCountry, progressByCountry]);
   const [viewedDay, setViewedDay] = useState(1);
 
@@ -409,7 +409,7 @@ export default function App() {
 
       const { data, error: progressError } = await supabase
         .from(progressTable)
-        .select("id,country,aktueller_tag,letztes_datum,gewaehltes_land")
+        .select("id,country,last_day,started_at,gewaehltes_land")
         .eq("user_id", session.user.id);
 
       if (progressError) {
@@ -424,8 +424,8 @@ export default function App() {
         if (row.country) {
           nextProgress[row.country] = {
             id: row.id,
-            aktueller_tag: safeDay(row.aktueller_tag ?? 1),
-            letztes_datum: row.letztes_datum ?? null
+            last_day: safeDay(row.last_day ?? 1),
+            started_at: row.started_at ?? null
           };
         }
       }
@@ -458,11 +458,11 @@ export default function App() {
           .insert({
             user_id: user.id,
             country: selectedCountry,
-            aktueller_tag: 1,
-            letztes_datum: todayDate,
+            last_day: 1,
+            started_at: todayDate,
             gewaehltes_land: selectedCountry
           })
-          .select("id,country,aktueller_tag,letztes_datum,gewaehltes_land")
+          .select("id,country,last_day,started_at,gewaehltes_land")
           .single();
 
         if (error) return;
@@ -477,20 +477,20 @@ export default function App() {
           ...prev,
           [selectedCountry]: {
             id: data.id,
-            aktueller_tag: safeDay(data.aktueller_tag ?? 1),
-            letztes_datum: data.letztes_datum ?? todayDate
+            last_day: safeDay(data.last_day ?? 1),
+            started_at: data.started_at ?? todayDate
           }
         }));
         return;
       }
 
-      if (existing.letztes_datum && existing.letztes_datum < todayDate) {
-        const nextDay = safeDay(existing.aktueller_tag) + 1;
+      if (existing.started_at && existing.started_at < todayDate) {
+        const nextDay = safeDay(existing.last_day) + 1;
         const { error: updateError } = await supabase
           .from(progressTable)
           .update({
-            aktueller_tag: nextDay,
-            letztes_datum: todayDate
+            last_day: nextDay,
+            started_at: todayDate
           })
           .eq("id", existing.id)
           .eq("user_id", user.id);
@@ -507,8 +507,8 @@ export default function App() {
           ...prev,
           [selectedCountry]: {
             ...existing,
-            aktueller_tag: nextDay,
-            letztes_datum: todayDate
+            last_day: nextDay,
+            started_at: todayDate
           }
         }));
       }
