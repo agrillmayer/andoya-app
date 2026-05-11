@@ -57,8 +57,8 @@ export default async function handler(req, res) {
         metadata: { user_id: userId }
       },
       metadata: { user_id: userId },
-      success_url: "https://andoya-app.vercel.app?success=true",
-      cancel_url: "https://andoya-app.vercel.app?canceled=true"
+      success_url: "https://andoya.app?success=true",
+      cancel_url: "https://andoya.app?canceled=true"
     });
 
     return res.status(200).json({ url: session.url });
