@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 const notesTable = "notizen";
 
-export default function MeineNotizen({ supabase, session, countries, onBack }) {
+export default function MeineNotizen({ supabase, session, countries, onBack, embedded = false }) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -92,17 +92,19 @@ export default function MeineNotizen({ supabase, session, countries, onBack }) {
   }
 
   return (
-    <main className="min-h-screen px-6 py-12 md:px-10">
+    <div className={`min-h-screen px-6 py-12 md:px-10 ${embedded ? "pb-28 md:pb-12" : ""}`}>
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <div className="flex items-center justify-between">
+        <div className={`flex items-center ${embedded ? "justify-start" : "justify-between"}`}>
           <h1 className="text-2xl font-semibold text-andoya-ink md:text-3xl">Meine Notizen</h1>
-          <button
-            type="button"
-            onClick={onBack}
-            className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#835baf] shadow-soft"
-          >
-            Zurück
-          </button>
+          {!embedded && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#835baf] shadow-soft"
+            >
+              Zurück
+            </button>
+          )}
         </div>
 
         {loading && <p className="text-sm text-andoya-slate">Notizen werden geladen...</p>}
@@ -161,6 +163,6 @@ export default function MeineNotizen({ supabase, session, countries, onBack }) {
             </section>
           ))}
       </div>
-    </main>
+    </div>
   );
 }

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import LandingPage from "./LandingPage";
 import MeineNotizen from "./MeineNotizen";
+import ResetPasswordScreen from "./ResetPasswordScreen";
+import KontoScreen from "./KontoScreen";
 import {
   BookmarkPlus,
   BookOpen,
@@ -130,8 +132,15 @@ function hasSubscriptionAccess(subscription) {
   return subscription.status === "trialing" || subscription.status === "active";
 }
 
+function isPasswordRecoveryHash() {
+  const raw = window.location.hash.replace(/^#/, "");
+  if (!raw) return false;
+  const params = new URLSearchParams(raw);
+  return params.get("type") === "recovery" || raw.includes("type=recovery");
+}
+
 function AuthScreen({ initialMode = "login", onBack }) {
-  const [mode, setMode] = useState(initialMode);
+  const [mode, setMode] = useState(initialMode === "register" ? "register" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
@@ -140,6 +149,7 @@ function AuthScreen({ initialMode = "login", onBack }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (mode === "forgot") return;
     if (!supabase) {
       setAuthError("Supabase ist nicht konfiguriert.");
       setAuthInfo("");
@@ -169,82 +179,212 @@ function AuthScreen({ initialMode = "login", onBack }) {
     setAuthLoading(false);
   }
 
+  async function handleForgotSubmit(event) {
+    event.preventDefault();
+    if (!supabase) {
+      setAuthError("Supabase ist nicht konfiguriert.");
+      setAuthInfo("");
+      return;
+    }
+
+    setAuthError("");
+    setAuthInfo("");
+    setAuthLoading(true);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://andoya.app/reset-password"
+    });
+
+    setAuthLoading(false);
+
+    if (error) {
+      setAuthError(mapAuthErrorToGerman(error.message));
+      return;
+    }
+
+    setAuthInfo(
+      "Wir haben dir einen Link zum Zurücksetzen deines Passworts geschickt. Bitte prüfe dein Postfach."
+    );
+  }
+
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-12">
-      <section className="w-full max-w-md rounded-4xl bg-white p-8 shadow-soft">
-        {onBack && (
-          <div className="mb-3">
-            <button
-              type="button"
-              onClick={onBack}
-              className="rounded-full bg-andoya-cream px-3 py-1 text-xs font-medium text-[#835baf]"
-            >
-              Zurück
-            </button>
+    <>
+      <style>
+        {`
+          @keyframes auth-screen-boat-drift {
+            0%,
+            100% {
+              transform: translateX(0) translateY(0);
+            }
+            50% {
+              transform: translateX(calc(100% - 80px)) translateY(-4px);
+            }
+          }
+          .auth-screen-boat-track {
+            position: relative;
+            width: 100%;
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+            overflow: hidden;
+            background: transparent;
+          }
+          .auth-screen-boat-slider {
+            width: 100%;
+            display: block;
+            animation: auth-screen-boat-drift 9s ease-in-out infinite;
+            will-change: transform;
+          }
+        `}
+      </style>
+      <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_90%_70%_at_50%_12%,#ede7f8_0%,#f5f0fb_42%,#ffffff_78%)] px-6 py-12">
+        <section className="w-full max-w-md rounded-4xl bg-white p-8 shadow-soft">
+          {onBack && (
+            <div className="mb-3">
+              <button
+                type="button"
+                onClick={onBack}
+                className="rounded-full bg-andoya-cream px-3 py-1 text-xs font-medium text-[#835baf]"
+              >
+                Zurück
+              </button>
+            </div>
+          )}
+          <div className="flex flex-col items-center">
+            <img src="/Logo_Andoya1.png" alt="Andoya Logo" className="h-20 w-auto" />
           </div>
-        )}
-        <div className="flex flex-col items-center">
-          <img src="/Logo_Andoya1.png" alt="Andoya Logo" className="h-20 w-auto" />
-          <h1 className="mt-4 text-2xl font-semibold text-andoya-ink">Willkommen bei Andoya</h1>
-        </div>
-
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
-          <div className="space-y-1">
-            <label htmlFor="email" className="text-sm font-medium text-[#835baf]">
-              E-Mail
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-xl border border-[#835baf] bg-white px-3 py-2 text-sm text-andoya-ink outline-none ring-[#835baf] transition focus:ring-2"
-            />
+          <div className="auth-screen-boat-track mt-4" aria-hidden>
+            <div className="auth-screen-boat-slider">
+              <img
+                src="/plane.png"
+                alt=""
+                width={80}
+                className="block max-w-none"
+                style={{ width: "80px", height: "auto" }}
+              />
+            </div>
           </div>
+          <p className="text-center text-base leading-snug text-andoya-slate">
+            Bist du bereit für deine nächste Reise?
+          </p>
+          <h1 className="mt-4 text-center text-2xl font-semibold text-andoya-ink">
+            {mode === "forgot" ? "Passwort zurücksetzen" : "Willkommen bei Andoya"}
+          </h1>
 
-          <div className="space-y-1">
-            <label htmlFor="password" className="text-sm font-medium text-[#835baf]">
-              Passwort
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-xl border border-[#835baf] bg-white px-3 py-2 text-sm text-andoya-ink outline-none ring-[#835baf] transition focus:ring-2"
-            />
-          </div>
+          {mode === "forgot" ? (
+            <form onSubmit={handleForgotSubmit} className="mt-8 space-y-4">
+              <div className="space-y-1">
+                <label htmlFor="forgot-email" className="text-sm font-medium text-[#835baf]">
+                  E-Mail
+                </label>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="w-full rounded-xl border border-[#835baf] bg-white px-3 py-2 text-sm text-andoya-ink outline-none ring-[#835baf] transition focus:ring-2"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="w-full rounded-xl bg-andoya-ink px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
+              >
+                Link anfordern
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+              <div className="space-y-1">
+                <label htmlFor="email" className="text-sm font-medium text-[#835baf]">
+                  E-Mail
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="w-full rounded-xl border border-[#835baf] bg-white px-3 py-2 text-sm text-andoya-ink outline-none ring-[#835baf] transition focus:ring-2"
+                />
+              </div>
 
-          <button
-            type="submit"
-            disabled={authLoading}
-            className="w-full rounded-xl bg-andoya-ink px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
-          >
-            {mode === "login" ? "Anmelden" : "Registrieren"}
-          </button>
-        </form>
+              <div className="space-y-1">
+                <label htmlFor="password" className="text-sm font-medium text-[#835baf]">
+                  Passwort
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="w-full rounded-xl border border-[#835baf] bg-white px-3 py-2 text-sm text-andoya-ink outline-none ring-[#835baf] transition focus:ring-2"
+                />
+              </div>
 
-        <p className="mt-4 text-center text-sm text-andoya-slate">
-          {mode === "login" ? "Noch kein Konto?" : "Schon ein Konto?"}{" "}
-          <button
-            type="button"
-            className="font-semibold text-[#835baf]"
-            onClick={() => {
-              setMode((prev) => (prev === "login" ? "register" : "login"));
-              setAuthError("");
-              setAuthInfo("");
-            }}
-          >
-            {mode === "login" ? "Registrieren" : "Anmelden"}
-          </button>
-        </p>
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="w-full rounded-xl bg-andoya-ink px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-95 disabled:opacity-60"
+              >
+                {mode === "login" ? "Anmelden" : "Registrieren"}
+              </button>
+            </form>
+          )}
 
-        {authError && <p className="mt-3 text-center text-sm text-[#c0392b]">{authError}</p>}
-        {authInfo && <p className="mt-3 text-center text-sm text-[#4b7e76]">{authInfo}</p>}
-      </section>
-    </main>
+          {mode === "login" && (
+            <p className="mt-3 text-center text-sm text-andoya-slate">
+              <button
+                type="button"
+                className="font-semibold text-[#835baf]"
+                onClick={() => {
+                  setMode("forgot");
+                  setAuthError("");
+                  setAuthInfo("");
+                }}
+              >
+                Passwort vergessen?
+              </button>
+            </p>
+          )}
+
+          {mode === "forgot" ? (
+            <p className="mt-4 text-center text-sm text-andoya-slate">
+              <button
+                type="button"
+                className="font-semibold text-[#835baf]"
+                onClick={() => {
+                  setMode("login");
+                  setAuthError("");
+                  setAuthInfo("");
+                }}
+              >
+                Zurück zum Login
+              </button>
+            </p>
+          ) : (
+            <p className="mt-4 text-center text-sm text-andoya-slate">
+              {mode === "login" ? "Noch kein Konto?" : "Schon ein Konto?"}{" "}
+              <button
+                type="button"
+                className="font-semibold text-[#835baf]"
+                onClick={() => {
+                  setMode((prev) => (prev === "login" ? "register" : "login"));
+                  setAuthError("");
+                  setAuthInfo("");
+                }}
+              >
+                {mode === "login" ? "Registrieren" : "Anmelden"}
+              </button>
+            </p>
+          )}
+
+          {authError && <p className="mt-3 text-center text-sm text-[#c0392b]">{authError}</p>}
+          {authInfo && <p className="mt-3 text-center text-sm text-[#4b7e76]">{authInfo}</p>}
+        </section>
+      </main>
+    </>
   );
 }
 
@@ -329,6 +469,7 @@ export default function App() {
   const [subscription, setSubscription] = useState(null);
   const [subscriptionReady, setSubscriptionReady] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const [showPasswordReset, setShowPasswordReset] = useState(() => isPasswordRecoveryHash());
 
   const todayDate = useMemo(() => toDateOnlyValue(new Date()), []);
   const currentDay = useMemo(() => {
@@ -361,14 +502,26 @@ export default function App() {
       setAuthReady(true);
     });
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession ?? null);
+      if (event === "PASSWORD_RECOVERY") {
+        setShowPasswordReset(true);
+      }
     });
 
     return () => {
       mounted = false;
       authListener.subscription.unsubscribe();
     };
+  }, []);
+
+  useEffect(() => {
+    const syncRecoveryFromHash = () => {
+      setShowPasswordReset(isPasswordRecoveryHash());
+    };
+    syncRecoveryFromHash();
+    window.addEventListener("hashchange", syncRecoveryFromHash);
+    return () => window.removeEventListener("hashchange", syncRecoveryFromHash);
   }, []);
 
   useEffect(() => {
@@ -382,7 +535,7 @@ export default function App() {
       setSubscriptionReady(false);
       const { data, error: subscriptionError } = await supabase
         .from(subscriptionsTable)
-        .select("id,status,trial_end")
+        .select("id,status,trial_end,stripe_customer_id,stripe_price_id")
         .eq("user_id", session.user.id)
         .order("created_at", { ascending: false })
         .limit(1);
@@ -598,6 +751,21 @@ export default function App() {
     );
   }
 
+  if (showPasswordReset) {
+    return (
+      <ResetPasswordScreen
+        supabase={supabase}
+        onSuccess={() => {
+          const path = window.location.pathname || "/";
+          const search = window.location.search || "";
+          window.history.replaceState(null, "", path + search);
+          setShowPasswordReset(false);
+          setAuthMode("login");
+        }}
+      />
+    );
+  }
+
   if (!session) {
     if (authMode === "login" || authMode === "register") {
       return (
@@ -679,17 +847,6 @@ export default function App() {
     );
   }
 
-  if (activePage === "notes") {
-    return (
-      <MeineNotizen
-        supabase={supabase}
-        session={session}
-        countries={countries}
-        onBack={() => setActivePage("main")}
-      />
-    );
-  }
-
   async function persistGewaehltesLand(land) {
     if (!supabase || !session?.user?.id || !land) return;
     await supabase
@@ -727,26 +884,48 @@ export default function App() {
   }
 
   return (
-    <main className="min-h-screen px-6 py-12 md:px-10">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-        <div className="flex justify-end">
+    <main className="min-h-screen px-6 pt-12 md:px-10">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 pb-28 md:pb-12">
+        <nav
+          className="hidden shrink-0 items-center justify-end gap-1 text-sm md:flex"
+          aria-label="Hauptnavigation"
+        >
           <button
             type="button"
             onClick={() => setActivePage("notes")}
-            className="mr-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-[#835baf] shadow-soft"
+            className={`rounded-md px-2 py-1 font-medium transition ${
+              activePage === "notes" ? "text-[#835baf]" : "text-andoya-slate hover:text-[#835baf]"
+            }`}
           >
-            Meine Notizen
+            Notizen
           </button>
+          <span className="select-none text-andoya-slate/35" aria-hidden>
+            ·
+          </span>
           <button
             type="button"
-            onClick={handleLogout}
-            className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[#835baf] shadow-soft"
+            onClick={() => setActivePage("account")}
+            className={`rounded-md px-2 py-1 font-medium transition ${
+              activePage === "account" ? "text-[#835baf]" : "text-andoya-slate hover:text-[#835baf]"
+            }`}
+          >
+            Konto
+          </button>
+          <span className="select-none text-andoya-slate/35" aria-hidden>
+            ·
+          </span>
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            className="rounded-md px-2 py-1 font-medium text-andoya-slate transition hover:text-[#835baf]"
           >
             Logout
           </button>
-        </div>
+        </nav>
 
-        <section className="space-y-4 pt-2">
+        {activePage === "main" && (
+          <>
+        <section className="space-y-4 pt-2 md:pt-0">
           <h1 className="text-2xl font-semibold leading-tight text-andoya-ink md:text-3xl">
             Dein täglicher Fernweh-Moment
           </h1>
@@ -980,7 +1159,83 @@ export default function App() {
             </aside>
           )}
         </section>
+          </>
+        )}
+
+        {activePage === "notes" && (
+          <MeineNotizen
+            embedded
+            supabase={supabase}
+            session={session}
+            countries={countries}
+            onBack={() => setActivePage("main")}
+          />
+        )}
+
+        {activePage === "account" && (
+          <KontoScreen
+            supabase={supabase}
+            session={session}
+            stripeMonthlyPrice={stripeMonthlyPrice}
+            stripeYearlyPrice={stripeYearlyPrice}
+            onLogout={handleLogout}
+          />
+        )}
       </div>
+
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-[#ede7f8] bg-white/95 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-4px_24px_rgba(53,5,76,0.06)] backdrop-blur-sm md:hidden"
+        aria-label="Hauptnavigation mobil"
+      >
+        <button
+          type="button"
+          onClick={() => setActivePage("main")}
+          className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 transition ${
+            activePage === "main" ? "text-[#835baf]" : "text-andoya-slate"
+          }`}
+        >
+          <span className="text-xl leading-none" aria-hidden>
+            🏠
+          </span>
+          <span
+            className={`text-[10px] ${activePage === "main" ? "font-semibold" : "font-medium"} text-center leading-tight`}
+          >
+            Lektion
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActivePage("notes")}
+          className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 transition ${
+            activePage === "notes" ? "text-[#835baf]" : "text-andoya-slate"
+          }`}
+        >
+          <span className="text-xl leading-none" aria-hidden>
+            📝
+          </span>
+          <span
+            className={`text-[10px] ${activePage === "notes" ? "font-semibold" : "font-medium"} text-center leading-tight`}
+          >
+            Notizen
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActivePage("account")}
+          className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 transition ${
+            activePage === "account" ? "text-[#835baf]" : "text-andoya-slate"
+          }`}
+        >
+          <span className="text-xl leading-none" aria-hidden>
+            👤
+          </span>
+          <span
+            className={`text-[10px] ${activePage === "account" ? "font-semibold" : "font-medium"} text-center leading-tight`}
+          >
+            Konto
+          </span>
+        </button>
+      </nav>
     </main>
   );
 }

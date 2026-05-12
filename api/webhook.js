@@ -24,11 +24,14 @@ async function upsertSubscriptionFromStripe(subscription) {
     ? new Date(subscription.trial_end * 1000).toISOString()
     : null;
 
+  const priceId = subscription.items?.data?.[0]?.price?.id ?? null;
+
   await supabase.from("subscriptions").upsert(
     {
       user_id: userId,
       stripe_customer_id: subscription.customer,
       stripe_subscription_id: subscription.id,
+      stripe_price_id: priceId,
       status,
       trial_start: trialStart,
       trial_end: trialEnd
