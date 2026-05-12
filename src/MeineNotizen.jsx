@@ -92,7 +92,7 @@ export default function MeineNotizen({ supabase, session, countries, onBack, emb
   }
 
   return (
-    <div className={`min-h-screen px-6 py-12 md:px-10 ${embedded ? "pb-28 md:pb-12" : ""}`}>
+    <div className={`min-h-screen px-6 py-12 md:px-10 ${embedded ? "pb-20 md:pb-12" : ""}`}>
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <div className={`flex items-center ${embedded ? "justify-start" : "justify-between"}`}>
           <h1 className="text-2xl font-semibold text-andoya-ink md:text-3xl">Meine Notizen</h1>

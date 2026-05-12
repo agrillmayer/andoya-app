@@ -118,7 +118,7 @@ export default function KontoScreen({
   }
 
   return (
-    <div className="min-h-screen px-6 py-12 pb-28 md:px-10 md:pb-12">
+    <div className="min-h-screen px-6 py-12 pb-20 md:px-10 md:pb-12">
       <div className="mx-auto flex w-full max-w-md flex-col gap-6">
         <h1 className="text-2xl font-semibold text-andoya-ink md:text-3xl">Konto</h1>
 

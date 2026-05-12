@@ -8,6 +8,8 @@ import {
   BookmarkPlus,
   BookOpen,
   Compass,
+  FileText,
+  House,
   Landmark,
   Leaf,
   Lightbulb,
@@ -15,6 +17,7 @@ import {
   MessageCircle,
   ScrollText,
   Sparkles,
+  User,
   Users,
   UtensilsCrossed
 } from "lucide-react";
@@ -885,7 +888,7 @@ export default function App() {
 
   return (
     <main className="min-h-screen px-6 pt-12 md:px-10">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 pb-28 md:pb-12">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 pb-20 md:pb-12">
         <nav
           className="hidden shrink-0 items-center justify-end gap-1 text-sm md:flex"
           aria-label="Hauptnavigation"
@@ -1184,21 +1187,19 @@ export default function App() {
       </div>
 
       <nav
-        className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-[#ede7f8] bg-white/95 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-4px_24px_rgba(53,5,76,0.06)] backdrop-blur-sm md:hidden"
+        className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-gray-100 bg-white pb-[max(0.15rem,env(safe-area-inset-bottom))] pt-1 md:hidden"
         aria-label="Hauptnavigation mobil"
       >
         <button
           type="button"
           onClick={() => setActivePage("main")}
-          className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 transition ${
-            activePage === "main" ? "text-[#835baf]" : "text-andoya-slate"
+          className={`flex flex-1 flex-col items-center gap-0.5 rounded-md px-1 py-0.5 transition ${
+            activePage === "main" ? "text-[#835baf]" : "text-[#9ca3af]"
           }`}
         >
-          <span className="text-xl leading-none" aria-hidden>
-            🏠
-          </span>
+          <House size={20} strokeWidth={1.65} className="shrink-0" aria-hidden />
           <span
-            className={`text-[10px] ${activePage === "main" ? "font-semibold" : "font-medium"} text-center leading-tight`}
+            className={`text-xs leading-tight ${activePage === "main" ? "font-semibold" : "font-medium"}`}
           >
             Lektion
           </span>
@@ -1206,15 +1207,13 @@ export default function App() {
         <button
           type="button"
           onClick={() => setActivePage("notes")}
-          className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 transition ${
-            activePage === "notes" ? "text-[#835baf]" : "text-andoya-slate"
+          className={`flex flex-1 flex-col items-center gap-0.5 rounded-md px-1 py-0.5 transition ${
+            activePage === "notes" ? "text-[#835baf]" : "text-[#9ca3af]"
           }`}
         >
-          <span className="text-xl leading-none" aria-hidden>
-            📝
-          </span>
+          <FileText size={20} strokeWidth={1.65} className="shrink-0" aria-hidden />
           <span
-            className={`text-[10px] ${activePage === "notes" ? "font-semibold" : "font-medium"} text-center leading-tight`}
+            className={`text-xs leading-tight ${activePage === "notes" ? "font-semibold" : "font-medium"}`}
           >
             Notizen
           </span>
@@ -1222,15 +1221,13 @@ export default function App() {
         <button
           type="button"
           onClick={() => setActivePage("account")}
-          className={`flex flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 transition ${
-            activePage === "account" ? "text-[#835baf]" : "text-andoya-slate"
+          className={`flex flex-1 flex-col items-center gap-0.5 rounded-md px-1 py-0.5 transition ${
+            activePage === "account" ? "text-[#835baf]" : "text-[#9ca3af]"
           }`}
         >
-          <span className="text-xl leading-none" aria-hidden>
-            👤
-          </span>
+          <User size={20} strokeWidth={1.65} className="shrink-0" aria-hidden />
           <span
-            className={`text-[10px] ${activePage === "account" ? "font-semibold" : "font-medium"} text-center leading-tight`}
+            className={`text-xs leading-tight ${activePage === "account" ? "font-semibold" : "font-medium"}`}
           >
             Konto
           </span>
