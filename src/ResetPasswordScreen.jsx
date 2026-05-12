@@ -39,7 +39,7 @@ export default function ResetPasswordScreen({ supabase, onSuccess }) {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_90%_70%_at_50%_12%,#ede7f8_0%,#f5f0fb_42%,#ffffff_78%)] px-6 py-12">
+    <main className="flex min-h-0 flex-1 items-center justify-center bg-[radial-gradient(ellipse_90%_70%_at_50%_12%,#ede7f8_0%,#f5f0fb_42%,#ffffff_78%)] px-6 py-12">
       <section className="w-full max-w-md rounded-4xl bg-white p-8 shadow-soft">
         <div className="flex flex-col items-center">
           <img src="/Logo_Andoya1.png" alt="Andoya Logo" className="h-20 w-auto" />

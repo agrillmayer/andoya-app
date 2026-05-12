@@ -4,6 +4,9 @@ import LandingPage from "./LandingPage";
 import MeineNotizen from "./MeineNotizen";
 import ResetPasswordScreen from "./ResetPasswordScreen";
 import KontoScreen from "./KontoScreen";
+import ImpressumScreen from "./ImpressumScreen";
+import DatenschutzScreen from "./DatenschutzScreen";
+import AGBScreen from "./AGBScreen";
 import {
   BookmarkPlus,
   BookOpen,
@@ -135,6 +138,48 @@ function hasSubscriptionAccess(subscription) {
   return subscription.status === "trialing" || subscription.status === "active";
 }
 
+function AppFooter({ onOpenLegal, padForMobileNav = false }) {
+  const spacing = padForMobileNav ? "mb-20 md:mb-0" : "";
+  return (
+    <footer
+      role="contentinfo"
+      className={`shrink-0 border-t border-gray-100 bg-transparent px-4 py-3 text-center text-xs text-gray-400 ${spacing}`}
+    >
+      <span>© 2026 Andoya</span>
+      <span className="mx-1 select-none" aria-hidden>
+        ·
+      </span>
+      <button
+        type="button"
+        onClick={() => onOpenLegal("impressum")}
+        className="text-inherit underline-offset-2 hover:text-gray-500 hover:underline"
+      >
+        Impressum
+      </button>
+      <span className="mx-1 select-none" aria-hidden>
+        ·
+      </span>
+      <button
+        type="button"
+        onClick={() => onOpenLegal("datenschutz")}
+        className="text-inherit underline-offset-2 hover:text-gray-500 hover:underline"
+      >
+        Datenschutz
+      </button>
+      <span className="mx-1 select-none" aria-hidden>
+        ·
+      </span>
+      <button
+        type="button"
+        onClick={() => onOpenLegal("agb")}
+        className="text-inherit underline-offset-2 hover:text-gray-500 hover:underline"
+      >
+        AGB
+      </button>
+    </footer>
+  );
+}
+
 function isPasswordRecoveryHash() {
   const raw = window.location.hash.replace(/^#/, "");
   if (!raw) return false;
@@ -239,7 +284,7 @@ function AuthScreen({ initialMode = "login", onBack }) {
           }
         `}
       </style>
-      <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_90%_70%_at_50%_12%,#ede7f8_0%,#f5f0fb_42%,#ffffff_78%)] px-6 py-12">
+      <main className="flex min-h-0 flex-1 items-center justify-center bg-[radial-gradient(ellipse_90%_70%_at_50%_12%,#ede7f8_0%,#f5f0fb_42%,#ffffff_78%)] px-6 py-12">
         <section className="w-full max-w-md rounded-4xl bg-white p-8 shadow-soft">
           {onBack && (
             <div className="mb-3">
@@ -397,7 +442,7 @@ function UpgradeScreen({ session, subscription, onCheckout, onLogout }) {
   const checkoutCanceled = searchParams.get("canceled") === "true";
 
   return (
-    <main className="min-h-screen px-6 py-12 md:px-10">
+    <main className="flex min-h-0 flex-1 flex-col px-6 py-12 md:px-10">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         <div className="flex justify-end">
           <button
@@ -459,6 +504,7 @@ function UpgradeScreen({ session, subscription, onCheckout, onLogout }) {
 }
 
 export default function App() {
+  const [legalView, setLegalView] = useState(null);
   const [session, setSession] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [authMode, setAuthMode] = useState(null);
@@ -746,51 +792,79 @@ export default function App() {
     [selectedCountry]
   );
 
+  if (legalView) {
+    return (
+      <div className="flex min-h-screen flex-col bg-[radial-gradient(ellipse_90%_70%_at_50%_12%,#ede7f8_0%,#f5f0fb_42%,#ffffff_78%)]">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {legalView === "impressum" && <ImpressumScreen onBack={() => setLegalView(null)} />}
+          {legalView === "datenschutz" && <DatenschutzScreen onBack={() => setLegalView(null)} />}
+          {legalView === "agb" && <AGBScreen onBack={() => setLegalView(null)} />}
+        </div>
+        <AppFooter onOpenLegal={setLegalView} />
+      </div>
+    );
+  }
+
   if (!authReady) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-andoya-slate">Lade Andoya...</p>
-      </main>
+      <div className="flex min-h-screen flex-col">
+        <main className="flex min-h-0 flex-1 items-center justify-center">
+          <p className="text-sm text-andoya-slate">Lade Andoya...</p>
+        </main>
+        <AppFooter onOpenLegal={setLegalView} />
+      </div>
     );
   }
 
   if (showPasswordReset) {
     return (
-      <ResetPasswordScreen
-        supabase={supabase}
-        onSuccess={() => {
-          const path = window.location.pathname || "/";
-          const search = window.location.search || "";
-          window.history.replaceState(null, "", path + search);
-          setShowPasswordReset(false);
-          setAuthMode("login");
-        }}
-      />
+      <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <ResetPasswordScreen
+            supabase={supabase}
+            onSuccess={() => {
+              const path = window.location.pathname || "/";
+              const search = window.location.search || "";
+              window.history.replaceState(null, "", path + search);
+              setShowPasswordReset(false);
+              setAuthMode("login");
+            }}
+          />
+        </div>
+        <AppFooter onOpenLegal={setLegalView} />
+      </div>
     );
   }
 
   if (!session) {
     if (authMode === "login" || authMode === "register") {
       return (
-        <AuthScreen
-          initialMode={authMode}
-          onBack={() => setAuthMode(null)}
-        />
+        <div className="flex min-h-screen flex-col">
+          <div className="flex min-h-0 flex-1 flex-col">
+            <AuthScreen initialMode={authMode} onBack={() => setAuthMode(null)} />
+          </div>
+          <AppFooter onOpenLegal={setLegalView} />
+        </div>
       );
     }
     return (
-      <LandingPage
-        onLogin={() => setAuthMode("login")}
-        onRegister={() => setAuthMode("register")}
-      />
+      <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <LandingPage onLogin={() => setAuthMode("login")} onRegister={() => setAuthMode("register")} />
+        </div>
+        <AppFooter onOpenLegal={setLegalView} />
+      </div>
     );
   }
 
   if (!subscriptionReady) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-andoya-slate">Prüfe Abo-Status...</p>
-      </main>
+      <div className="flex min-h-screen flex-col">
+        <main className="flex min-h-0 flex-1 items-center justify-center">
+          <p className="text-sm text-andoya-slate">Prüfe Abo-Status...</p>
+        </main>
+        <AppFooter onOpenLegal={setLegalView} />
+      </div>
     );
   }
 
@@ -827,6 +901,7 @@ export default function App() {
   async function handleLogout() {
     if (!supabase) return;
     await supabase.auth.signOut();
+    setLegalView(null);
     setAuthMode(null);
     setActivePage("main");
     setSelectedCountry("");
@@ -836,17 +911,20 @@ export default function App() {
 
   if (!hasSubscriptionAccess(subscription)) {
     return (
-      <>
-        <UpgradeScreen
-          session={session}
-          subscription={subscription}
-          onCheckout={handleCheckout}
-          onLogout={handleLogout}
-        />
-        {checkoutError && (
-          <p className="pb-8 text-center text-sm text-red-600">{checkoutError}</p>
-        )}
-      </>
+      <div className="flex min-h-screen flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <UpgradeScreen
+            session={session}
+            subscription={subscription}
+            onCheckout={handleCheckout}
+            onLogout={handleLogout}
+          />
+          {checkoutError && (
+            <p className="pb-8 text-center text-sm text-red-600">{checkoutError}</p>
+          )}
+        </div>
+        <AppFooter onOpenLegal={setLegalView} />
+      </div>
     );
   }
 
@@ -1185,6 +1263,8 @@ export default function App() {
           />
         )}
       </div>
+
+      <AppFooter onOpenLegal={setLegalView} padForMobileNav />
 
       <nav
         className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-gray-100 bg-white pb-[max(0.15rem,env(safe-area-inset-bottom))] pt-1 md:hidden"

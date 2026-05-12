@@ -1,6 +1,6 @@
 export default function LandingPage({ onLogin, onRegister }) {
   return (
-    <main className="min-h-screen px-6 py-10 md:px-10">
+    <main className="flex min-h-0 flex-1 flex-col px-6 py-10 md:px-10">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-12">
         <header className="flex items-center justify-between gap-4">
           <img
